@@ -1,46 +1,37 @@
-#include <iostream>
+import AoC;
+import std;
+
 #include <cstdlib>
-#include <fstream>
-#include <filesystem>
-#include <string>
-#include <sstream>
-#include <optional>
-#include <vector>
 
 std::optional<size_t> PartOne(const std::filesystem::path& Path)
 {
     size_t Sum = 0;
 
-    std::ifstream FileStream(Path, std::ios::in);
-
-    if (!FileStream.is_open())
-    {
-        std::cout << "Path " << Path << " could not be opened." << std::endl;
-        return {};
-    }
-
-    std::string Line;
-
-    while (getline(FileStream, Line))
-    {
-        std::stringstream Digits;
-        auto FirstDigit = Line.find_first_of("0123456789");
-        auto LastDigit = Line.find_last_of("0123456789");
-
-        if (FirstDigit == std::string::npos || LastDigit == std::string::npos)
+    if (ReadLines<size_t>(Path, [](const std::string& Line, size_t& Sum)->bool
         {
-            std::cout << "Line " << Line << " does not contain at least two digits. Exiting..." << std::endl;
-            return {};
-        }
+            std::stringstream Digits;
+            const auto FirstDigit = Line.find_first_of("0123456789");
+            const auto LastDigit = Line.find_last_of("0123456789");
 
-        Digits << Line[FirstDigit] << Line[LastDigit];
-        int Number;
-        Digits >> Number;
+            if (FirstDigit == std::string::npos || LastDigit == std::string::npos)
+            {
+                std::cout << "Line " << Line << " does not contain at least two digits. Exiting..." << std::endl;
+                return false;
+            }
 
-        Sum += Number;
+            Digits << Line[FirstDigit] << Line[LastDigit];
+            int Number;
+            Digits >> Number;
+
+            Sum += Number;
+
+            return true;
+        }, Sum))
+    {
+        return Sum;
     }
 
-    return Sum;
+    return {};
 }
 
 std::optional<size_t> PartTwo(const std::filesystem::path& Path)
