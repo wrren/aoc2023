@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 				return EXIT_FAILURE;
 			}
 
-			auto game_id = std::atol(game_match[1].str().c_str());
+			size_t game_id = std::atol(game_match[1].str().c_str());
 
 			game this_game{ game_id };
 

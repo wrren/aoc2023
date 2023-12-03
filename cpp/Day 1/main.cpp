@@ -24,8 +24,8 @@ std::optional<size_t> PartOne(const std::filesystem::path& Path)
     while (getline(FileStream, Line))
     {
         std::stringstream Digits;
-        auto FirstDigit = Line.find_first_of("0123456789");
-        auto LastDigit = Line.find_last_of("0123456789");
+        const auto FirstDigit = Line.find_first_of("0123456789");
+        const auto LastDigit = Line.find_last_of("0123456789");
 
         if (FirstDigit == std::string::npos || LastDigit == std::string::npos)
         {
