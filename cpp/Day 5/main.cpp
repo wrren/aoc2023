@@ -4,6 +4,7 @@
 #include <iostream>
 #include <regex>
 #include <set>
+#include <cstdint>
 
 enum class resource_type
 {
@@ -19,10 +20,10 @@ enum class resource_type
 
 struct range
 {
-    size_t start;
-    size_t end;
+    int64_t start;
+    int64_t end;
 
-    bool overlaps(size_t in) const
+    bool overlaps(int64_t in) const
     {
         return in >= start && in < end;
     }
@@ -37,6 +38,22 @@ struct range
         return range{ std::max(start, other.start), std::min(end, other.end) };
     }
 
+    std::vector<range> trim(const range& other) const
+    {
+        std::vector<range> extras;
+
+	    if(other.start < start)
+	    {
+            extras.push_back({ other.start, start - 1 });
+	    }
+        if(other.end > end)
+        {
+            extras.push_back({ end, other.end });
+        }
+
+        return extras;
+    }
+
     bool operator<(const range& other) const
     {
         return start < other.start;
@@ -48,7 +65,7 @@ struct transform
     range from;
     range to;
 
-    size_t apply(size_t in) const
+    int64_t apply(int64_t in) const
     {
 	    if(from.overlaps(in))
 	    {
@@ -78,13 +95,13 @@ struct resource_map
 
 struct almanac
 {
-    std::vector<size_t>         seeds;
+    std::vector<int64_t>         seeds;
     std::vector<resource_map>   maps;
 };
 
-size_t map_seed(const almanac& almanac, size_t seed)
+int64_t map_seed(const almanac& almanac, int64_t seed)
 {
-    size_t current_value = seed;
+    int64_t current_value = seed;
 
     for (auto& map : almanac.maps)
     {
@@ -101,9 +118,9 @@ size_t map_seed(const almanac& almanac, size_t seed)
     return current_value;
 }
 
-size_t part_one(const almanac& almanac)
+int64_t part_one(const almanac& almanac)
 {
-    size_t location = std::numeric_limits<size_t>::max();
+    int64_t location = std::numeric_limits<int64_t>::max();
 
     for (auto seed : almanac.seeds)
     {
@@ -140,13 +157,27 @@ void traverse(std::vector<range> range_queue, std::vector<resource_map>::const_i
         auto range = range_queue.back();
         range_queue.pop_back();
 
+        bool overlaps = false;
+
         for (auto& transform : current_map->transforms)
         {
             if (transform.from.overlaps(range))
             {
+                overlaps = true;
+                auto extras = transform.from.trim(range);
                 auto new_range = transform.apply(range);
                 new_queue.push_back(new_range);
+
+                for(auto& e : extras)
+                {
+                    range_queue.push_back(e);
+                }
             }
+        }
+
+        if(!overlaps)
+        {
+            new_queue.push_back(range);
         }
     }
 
@@ -166,12 +197,12 @@ void traverse(std::vector<range> range_queue, std::vector<resource_map>::const_i
 }
 
 
-size_t part_two(const almanac& almanac)
+int64_t part_two(const almanac& almanac)
 {
     std::vector <range> range_queue;
-    range best_range{ std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max() };
+    range best_range{ std::numeric_limits<int64_t>::max(), std::numeric_limits<int64_t>::max() };
 
-    for(size_t i = 0; i < almanac.seeds.size(); i += 2)
+    for(int64_t i = 0; i < almanac.seeds.size(); i += 2)
     {
         range_queue.push_back({ almanac.seeds[i], almanac.seeds[i] + almanac.seeds[i + 1] });
     }
@@ -212,7 +243,7 @@ int main(int argc, char** argv)
                         return false;
                     }
 
-                    current_almanac.seeds = aoc::split_transform<size_t>(seeds_match[1], " ", [](const std::string& seed_number)->size_t { return std::stoll(seed_number); });
+                    current_almanac.seeds = aoc::split_transform<int64_t>(seeds_match[1], " ", [](const std::string& seed_number)->int64_t { return std::stoll(seed_number); });
                 }
                 else if(std::regex_search(line, map_match, map_regex) && map_match.size() == 3)
                 {
@@ -228,7 +259,7 @@ int main(int argc, char** argv)
                 }
                 else if(line != "")
                 {
-                    auto parsed_range = aoc::split_transform<size_t>(line, " ", [](const std::string& seed_number)->size_t { return std::stoll(seed_number); });
+                    auto parsed_range = aoc::split_transform<int64_t>(line, " ", [](const std::string& seed_number)->int64_t { return std::stoll(seed_number); });
 
                     if (parsed_range.size() == 3)
                     {
