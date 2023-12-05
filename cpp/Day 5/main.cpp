@@ -3,7 +3,7 @@
 #include <map>
 #include <iostream>
 #include <regex>
-#include <climits>
+#include <set>
 
 enum class resource_type
 {
@@ -19,16 +19,61 @@ enum class resource_type
 
 struct range
 {
-    size_t destination;
-    size_t source;
-    size_t size;
+    size_t start;
+    size_t end;
+
+    bool overlaps(size_t in) const
+    {
+        return in >= start && in < end;
+    }
+
+    bool overlaps(const range& other) const
+    {
+        return (other.start >= start && other.start < end) || (other.end >= start && other.end < end);
+    }
+
+    range constrain(const range& other) const
+    {
+        return range{ std::max(start, other.start), std::min(end, other.end) };
+    }
+
+    bool operator<(const range& other) const
+    {
+        return start < other.start;
+    }
+};
+
+struct transform
+{
+    range from;
+    range to;
+
+    size_t apply(size_t in) const
+    {
+	    if(from.overlaps(in))
+	    {
+            in += (to.start - from.start);
+	    }
+
+        return in;
+    }
+
+    range apply(const range& other) const
+    {
+        range constrained = from.constrain(other);
+
+        constrained.start += (to.start - from.start);
+        constrained.end += (to.start - from.start);
+
+        return constrained;
+    }
 };
 
 struct resource_map
 {
-    resource_type       from;
-    resource_type       to;
-    std::vector<range>  ranges;
+    resource_type           from;
+    resource_type           to;
+    std::vector<transform>  transforms;
 };
 
 struct almanac
@@ -37,19 +82,17 @@ struct almanac
     std::vector<resource_map>   maps;
 };
 
-size_t map_seed(const almanac& almanac, size_t seed, resource_type resource)
+size_t map_seed(const almanac& almanac, size_t seed)
 {
-    auto from_resource = resource_type::seed;
-
     size_t current_value = seed;
 
     for (auto& map : almanac.maps)
     {
-        for (const auto& range : map.ranges)
+        for (const auto& transform : map.transforms)
         {
-            if (current_value >= range.source && current_value < (range.source + range.size))
+            if(transform.from.overlaps(current_value))
             {
-                current_value += (range.destination - range.source);
+                current_value = transform.apply(current_value);
                 break;
             }
         }
@@ -64,91 +107,78 @@ size_t part_one(const almanac& almanac)
 
     for (auto seed : almanac.seeds)
     {
-        location = std::min(location, map_seed(almanac, seed, resource_type::location));
+        location = std::min(location, map_seed(almanac, seed));
     }
 
     return location;
 }
 
-size_t local_minimum(const almanac& almanac, size_t start, size_t end)
+void traverse(std::vector<range> range_queue, std::vector<resource_map>::const_iterator current_map, std::vector<resource_map>::const_iterator end, range& best_range)
 {
-    size_t location = std::numeric_limits<size_t>::max();
-
-    while (true)
+    if(range_queue.empty())
     {
-        auto low    = map_seed(almanac, start, resource_type::location);
-        auto high   = map_seed(almanac, end, resource_type::location);
+        return;
+    }
 
-        if (low < high)
+    if(current_map == end)
+    {
+	    for(auto& range : range_queue)
+	    {
+		    if(range < best_range)
+		    {
+                best_range = range;
+		    }
+	    }
+
+        return;
+    }
+
+    std::vector<range> new_queue;
+
+    while(!range_queue.empty())
+    {
+        auto range = range_queue.back();
+        range_queue.pop_back();
+
+        for (auto& transform : current_map->transforms)
         {
-            if (low > location)
+            if (transform.from.overlaps(range))
             {
-                break;
+                auto new_range = transform.apply(range);
+                new_queue.push_back(new_range);
             }
-            end         = start + (end - start) / 2;;
-            location    = low;
-        }
-        else if (high < low)
-        {
-            if (high > location)
-            {
-                break;
-            }
-            start       = start + (end - start) / 2;
-            location    = low;
-        }
-        else if (low < location)
-        {
-            start = start + (end - start) / 2;
-            location = low;
-        }
-        else if (start == end)
-        {
-            break;
         }
     }
 
-    return location;
+    for(auto& range : range_queue)
+    {
+        for(auto& transform : current_map->transforms)
+        {
+	        if(transform.from.overlaps(range))
+	        {
+                auto new_range = transform.apply(range);
+                new_queue.push_back(new_range);
+	        }
+        }
+    }
+
+    traverse(new_queue, ++current_map, end, best_range);
 }
 
-std::vector<range> find_path(const almanac& almanac, const range& start, std::vector<resource_type>::const_iterator begin, std::vector<resource_type>::const_iterator end)
-{
-    std::vector<range> path;
-
-
-
-    return path;
-}
 
 size_t part_two(const almanac& almanac)
 {
-    size_t location = std::numeric_limits<size_t>::max();
+    std::vector <range> range_queue;
+    range best_range{ std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max() };
 
-    std::vector<range> path;
-
-    for (auto& range : almanac.maps.rbegin()->ranges)
+    for(size_t i = 0; i < almanac.seeds.size(); i += 2)
     {
-        for (auto it = almanac.maps.rbegin() + 1; it != almanac.maps.rend(); ++it)
-        {
-            for (auto& r : it->ranges)
-            {
-                if((r.source <= range.source && r.destination >= range.source) || (r.destination >= range.destination && r.destination >= range.source)
-            }
-        }
-
-        if (path.size() != almanac.maps.size())
-        {
-            path.clear();
-        }
-        else
-        {
-            break;
-        }
+        range_queue.push_back({ almanac.seeds[i], almanac.seeds[i] + almanac.seeds[i + 1] });
     }
 
+    traverse(range_queue, almanac.maps.begin(), almanac.maps.end(), best_range);
     
-    
-    return location;
+    return best_range.start;
 }
 
 int main(int argc, char** argv)
@@ -202,7 +232,12 @@ int main(int argc, char** argv)
 
                     if (parsed_range.size() == 3)
                     {
-                        current_almanac.maps[current_almanac.maps.size() - 1].ranges.push_back({parsed_range[0], parsed_range[1], parsed_range[2]});
+                        transform new_transform{
+                            { parsed_range[1], parsed_range[1] + parsed_range[2] },
+                            { parsed_range[0], parsed_range[0] + parsed_range[2] },
+                        };
+
+                        current_almanac.maps[current_almanac.maps.size() - 1].transforms.push_back(new_transform);
                     }
                     else
                     {
@@ -213,15 +248,7 @@ int main(int argc, char** argv)
                 return true;
             }, current_almanac))
         {
-            for (auto& map : current_almanac.maps)
-            {
-                auto& ranges = map.ranges;
-
-                std::sort(ranges.begin(), ranges.end(), [](const range& a, const range& b)->bool {
-                    return a.destination < b.destination;
-                });
-            }
-
+            
             std::cout << "Lowest Location (Part 1): " << part_one(current_almanac) << std::endl;
             std::cout << "Lowest Location (Part 2): " << part_two(current_almanac) << std::endl;
         }
