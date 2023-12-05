@@ -1,0 +1,27 @@
+# Advent of Code
+
+## Section
+
+```elixir
+defmodule Day1 do
+  def part_one(lines) when is_list(lines) do
+    lines
+    |> Enum.reduce(0, fn line, sum ->
+      ~r/\d/
+      |> Regex.scan(line)
+      |> then(fn matches ->
+        List.first(List.first(matches)) <> List.first(List.last(matches))
+      end)
+      |> String.to_integer()
+      |> Kernel.+(sum)
+    end)
+  end
+end
+```
+
+```elixir
+"D:\\Development\\Advent of Code\\Inputs\\day1-1.txt"
+|> File.read!()
+|> String.split("\n", trim: true)
+|> Day1.part_one()
+```
