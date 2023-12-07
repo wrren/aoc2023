@@ -10,10 +10,12 @@ struct card
     char    c;
     size_t  strength;
     size_t  count;
+    bool    is_wildcard;
 
     card() = default;
 
-    card(char c)
+    card(char c) :
+    is_wildcard(c == 'J')
     {
         for(size_t i = 0; i < sizeof(order) / sizeof(order[0]); i++)
         {
@@ -140,44 +142,44 @@ struct hand
                     return hand_type::five_of_a_kind;
                     break;
                 case 4:
-                    if(c.second.c != 'J' && wildcard_count == 1)
+                    if(!c.second.is_wildcard && wildcard_count == 1)
                     {
                         return hand_type::five_of_a_kind;
                     }
-                    else if(c.second.c != 'J')
+                    else if(!c.second.is_wildcard)
                     {
                         return hand_type::four_of_a_kind;
                     }
                     break;
                 case 3:
-                    if(c.second.c != 'J' && wildcard_count == 2)
+                    if(!c.second.is_wildcard && wildcard_count == 2)
                     {
                         return hand_type::five_of_a_kind;
                     }
-                    else if(c.second.c != 'J' && wildcard_count == 1)
+                    else if(!c.second.is_wildcard && wildcard_count == 1)
                     {
                         return hand_type::four_of_a_kind;
                     }
-                    else if(c.second.c != 'J')
+                    else if(!c.second.is_wildcard)
                     {
                         found_three = true;
                     }
                     break;
                 case 2:
-                    if(c.second.c != 'J' && wildcard_count == 3)
+                    if(!c.second.is_wildcard && wildcard_count == 3)
                     {
                         return hand_type::five_of_a_kind;
                     }
-                    else if(c.second.c != 'J' && wildcard_count == 2)
+                    else if(!c.second.is_wildcard && wildcard_count == 2)
                     {
                         return hand_type::four_of_a_kind;
                     }
-                    else if(c.second.c != 'J' && wildcard_count == 1)
+                    else if(!c.second.is_wildcard && wildcard_count == 1)
                     {
                         wildcard_count = 0;
                         found_three = true;
                     }
-                    else if(c.second.c != 'J')
+                    else if(!c.second.is_wildcard)
                     {
                         found_pairs++;
                     }
@@ -349,7 +351,6 @@ int main(int argc, char** argv)
 
             for(size_t i = 0; i < bets.size(); i++)
             {
-                std::cout << bets[i].the_hand.card_string << " " << bets[i].amount << std::endl;
                 total_winnings += bets[i].amount * (i + 1);
             }
 
