@@ -4,9 +4,30 @@
 #include <filesystem>
 #include <string>
 #include <functional>
+#include <aoc/list.h>
 
 namespace aoc
 {
+    list<std::string> read_file_lines(const std::filesystem::path& path)
+    {
+        list<std::string> lines;
+        std::ifstream stream(path, std::ios::in);
+
+        if(!stream.is_open())
+        {
+            throw std::invalid_argument("unable to open file");
+        }
+
+        std::string line;
+
+        while (getline(stream, line))
+        {
+            lines.push_back(line);
+        }
+
+        return lines;
+    }
+
 	template<typename T>
 	bool read_file_lines(const std::filesystem::path& path, std::function<bool (const std::string&, T&)> reducer, T& initial = {})
 	{
