@@ -31,6 +31,10 @@ target("day7")
     set_kind("binary")
     add_files("src/day7/*.cpp")
 
+target("day8")
+    set_kind("binary")
+    add_files("src/day8/*.cpp")
+
 --
 -- If you want to known more usage about xmake, please see https://xmake.io
 --

@@ -30,6 +30,23 @@ namespace aoc
         return true;
 	}
 
+    std::string trim(const std::string& input, const std::string& delimiter = " ")
+    {
+        auto start  = input.find_first_not_of(delimiter);
+        auto end    = input.find_last_not_of(delimiter);
+
+        if(start == std::string::npos)
+        {
+            return "";
+        }
+        if(end == std::string::npos)
+        {
+            return input.substr(start);
+        }
+
+        return input.substr(start, end);
+    }
+
     std::vector<std::string> split(const std::string& input, const std::string& delimiter)
     {
         std::vector<std::string> split;
