@@ -10,18 +10,21 @@ namespace aoc
         typedef std::vector<T>::size_type       size_type;
         typedef std::vector<T>::reference       reference;
         typedef std::vector<T>::const_reference const_reference;
+        typedef std::vector<T>::const_iterator  const_iterator;
+        typedef std::vector<T>::iterator        iterator;
 
         template<typename A>
-        A reduce(std::function<A(const T&, const A&)> reducer, const A& initial = {}) const
+        bool reduce(std::function<bool(const T&, A&)> reducer, A& initial = {}) const
         {
-            A result = initial;
-
             for(auto& e : m_list)
             {
-                result = reducer(e, result);
+                if(!reducer(e, initial))
+                {
+                    return false;
+                }
             }
 
-            return result;
+            return true;
         }
 
         template<typename M>
@@ -36,6 +39,19 @@ namespace aoc
             }
 
             return result;
+        }
+
+        bool all(std::function<bool(const T&)> evaluator) const
+        {
+            for(auto& e : m_list)
+            {
+                if(evaluator(e) == false)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         void reserve(size_type size)
@@ -66,6 +82,26 @@ namespace aoc
         const_reference operator[](size_type i) const
         {
             return m_list[i];
+        }
+
+        const_iterator begin() const
+        {
+            return m_list.begin();
+        }
+
+        const_iterator end() const
+        {
+            return m_list.end();
+        }
+
+        iterator begin()
+        {
+            return m_list.begin();
+        }
+
+        iterator end()
+        {
+            return m_list.end();
         }
 
     private:

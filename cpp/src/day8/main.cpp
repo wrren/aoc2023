@@ -103,15 +103,15 @@ int main(int argc, char** argv)
 {
     for(int i = 1; i < argc; i++)
     {
-        auto m = aoc::read_file_lines(argv[i])
-        .reduce<map>([](const std::string& line, const map& m)->map
+        map m;
+        auto success = aoc::read_file_lines(argv[i])
+        .reduce<map>([](const std::string& line, map& m)->bool
         {
-            map o(m);
             const std::regex reg("([A-Z])");
 
             if(m.directions.empty())
             {
-                o.directions = line;
+                m.directions = line;
             }
             else if(!line.empty())
             {
@@ -120,18 +120,25 @@ int main(int argc, char** argv)
                 
                 if(!std::regex_search(line, match, reg))
                 {
-                    throw std::invalid_argument("unrecognized line format");
+                    return false;
                 }
 
                 node n{ match[1].str(), match[2].str(), match[3].str(), match[1].str()[2] == 'A', match[1].str()[2] == 'Z' };
-                o.lookup[n.name] = n;
+                m.lookup[n.name] = n;
             }
 
-            return o;
-        });
+            return true;
+        }, m);
 
-        std::cout << "Steps (Part 1): " << part_one(m) << std::endl;
-        std::cout << "Steps (Part 2): " << part_two(m) << std::endl;
+        if(success)
+        {
+            std::cout << "Steps (Part 1): " << part_one(m) << std::endl;
+            std::cout << "Steps (Part 2): " << part_two(m) << std::endl;
+        }
+        else
+        {
+            std::cerr << "Parsing Failure for file " << argv[i] << std::endl;
+        }
     }
 
     return EXIT_SUCCESS;
